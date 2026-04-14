@@ -1,0 +1,12 @@
+# Secrets
+appsettings.json
+
+# .NET build output
+bin/
+obj/
+
+# VS Code
+.vscode/
+
+# Nested project folder
+MovieApi/
