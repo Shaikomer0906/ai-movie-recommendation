@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Movie Recommendation — Project Documentation</title>
+  <style>
+    :root {
+      --brand: #6c63ff;
+      --brand-dark: #4b44cc;
+      --accent: #ff6584;
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #232340;
+      --text: #e8e8f0;
+      --muted: #9090b0;
+      --border: #2e2e50;
+      --green: #43e97b;
+      --blue: #38a9f5;
+      --orange: #f7b733;
+      --red: #ff6584;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 80px 40px 60px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(108,99,255,0.25) 0%, transparent 70%);
+    }
+    .hero-emoji { font-size: 4rem; display: block; margin-bottom: 16px; }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--brand) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+    }
+    .badge {
+      background: rgba(108,99,255,0.18);
+      border: 1px solid rgba(108,99,255,0.4);
+      color: #b8b3ff;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .badge a { color: inherit; text-decoration: none; }
+    .badge a:hover { text-decoration: underline; }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    nav a:hover { background: rgba(108,99,255,0.15); color: var(--brand); }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    section { margin-bottom: 64px; scroll-margin-top: 64px; }
+
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--brand);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h2 .icon { font-size: 1.4rem; }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #d0d0f0;
+      margin: 24px 0 10px;
+    }
+
+    p { color: var(--text); margin-bottom: 12px; }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: var(--brand); transform: translateY(-2px); }
+    .card-icon { font-size: 1.8rem; margin-bottom: 10px; }
+    .card h4 { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 6px; }
+    .card p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th {
+      background: var(--surface2);
+      color: var(--brand);
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(108,99,255,0.06); }
+
+    /* ── CODE ── */
+    pre {
+      background: #0d0d1a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 12px 0 20px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    pre code { color: #c9d1d9; }
+    .kw { color: #ff79c6; }
+    .str { color: #f1fa8c; }
+    .cm { color: #6272a4; font-style: italic; }
+    .fn { color: #50fa7b; }
+    .ty { color: #8be9fd; }
+    .num { color: #bd93f9; }
+    .sql-kw { color: #ff79c6; }
+    .sql-fn { color: #50fa7b; }
+    .sql-param { color: #ffb86c; }
+
+    /* ── ARCHITECTURE ── */
+    .arch {
+      background: #0d0d1a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      overflow-x: auto;
+    }
+    .arch-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      min-width: 600px;
+    }
+    .arch-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .arch-box.highlight { border-color: var(--brand); background: rgba(108,99,255,0.1); }
+    .arch-box .title { font-weight: 700; font-size: 0.9rem; color: #fff; margin-bottom: 4px; }
+    .arch-box .sub { font-size: 0.78rem; color: var(--muted); }
+    .arch-box .tech { font-size: 0.75rem; color: var(--brand); margin-top: 6px; }
+    .arch-arrow { color: var(--brand); font-size: 1.5rem; text-align: center; }
+
+    /* ── STEPS ── */
+    .steps { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+    .step {
+      display: flex;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .step-num {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.9rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body h4 { font-size: 0.95rem; color: #fff; margin-bottom: 4px; }
+    .step-body p { font-size: 0.88rem; color: var(--muted); margin: 0; }
+
+    /* ── CHALLENGES ── */
+    .challenge {
+      background: var(--surface);
+      border-left: 4px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+    }
+    .challenge h4 { font-size: 0.95rem; color: #fff; margin-bottom: 6px; }
+    .challenge .prob { font-size: 0.85rem; color: #ff9994; margin-bottom: 4px; }
+    .challenge .sol { font-size: 0.85rem; color: #7fff9a; margin: 0; }
+    .label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 6px;
+    }
+
+    /* ── API BLOCK ── */
+    .api-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .api-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .method {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+    .endpoint { font-family: monospace; font-size: 0.95rem; color: #fff; }
+    .api-body { padding: 16px 20px; }
+    .api-body p { font-size: 0.88rem; color: var(--muted); margin-bottom: 12px; }
+
+    /* ── SECURITY ── */
+    .security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .sec-item {
+      background: var(--surface);
+      border: 1px solid #1e4d2b;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .sec-item .check { color: var(--green); font-size: 1.1rem; margin-bottom: 8px; }
+    .sec-item h4 { font-size: 0.88rem; color: #fff; margin-bottom: 4px; }
+    .sec-item p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    /* ── SETUP ── */
+    .setup-step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+    .setup-num {
+      background: var(--surface2);
+      border: 1px solid var(--brand);
+      color: var(--brand);
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .setup-content h4 { font-size: 0.95rem; color: #fff; margin-bottom: 6px; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    footer strong { color: var(--brand); }
+
+    /* ── EMBEDDING VIZ ── */
+    .embed-viz {
+      background: #0d0d1a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .embed-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .embed-label { color: var(--orange); width: 220px; flex-shrink: 0; }
+    .embed-bar-wrap { flex: 1; background: #1a1a2e; border-radius: 4px; height: 12px; overflow: hidden; }
+    .embed-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--brand), var(--accent)); }
+    .embed-score { color: var(--green); width: 80px; text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-emoji">🎬</span>
+  <h1>AI Movie Recommendation System</h1>
+  <p>A full-stack app that uses OpenAI embeddings and pgvector to return semantically matched movies for any natural language query.</p>
+  <div class="hero-meta">
+    <span class="badge">Shaik Omer</span>
+    <span class="badge">April 2026</span>
+    <span class="badge">.NET 10 · React · OpenAI · PostgreSQL</span>
+    <span class="badge"><a href="https://github.com/Shaikomer0906/ai-movie-recommendation" target="_blank">⭐ GitHub Repo</a></span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#stack">Tech Stack</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#backend">Backend</a>
+  <a href="#database">Database</a>
+  <a href="#ai">AI / Embeddings</a>
+  <a href="#frontend">Frontend</a>
+  <a href="#api">API Reference</a>
+  <a href="#challenges">Challenges</a>
+  <a href="#security">Security</a>
+  <a href="#setup">How to Run</a>
+</nav>
+
+<main>
+
+  <!-- 1. OVERVIEW -->
+  <section id="overview">
+    <h2><span class="icon">📌</span> Project Overview</h2>
+    <p>This project is a <strong>full-stack AI-powered movie recommendation system</strong>. The user types a natural language description — like <em>"mind-bending sci-fi with time travel"</em> — and the app returns the 3 most semantically similar movies from the database.</p>
+    <p>Unlike keyword search, this system understands the <em>meaning</em> behind words using vector embeddings generated by OpenAI's <code>text-embedding-3-small</code> model.</p>
+
+    <div class="card-grid" style="margin-top:24px;">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h4>AI-Powered Search</h4>
+        <p>OpenAI embeddings turn text into 1536-dimensional vectors for semantic matching</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗃️</div>
+        <h4>Vector Database</h4>
+        <p>PostgreSQL + pgvector stores and queries embedding data with cosine similarity</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h4>.NET 10 API</h4>
+        <p>Fast, controller-based REST API with Swagger UI for interactive testing</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚛️</div>
+        <h4>React Frontend</h4>
+        <p>Clean React + Vite UI with search input, spinner, and 3 result cards</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. TECH STACK -->
+  <section id="stack">
+    <h2><span class="icon">🛠️</span> Tech Stack</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Backend</td><td>ASP.NET Core Web API</td><td>.NET 10</td><td>REST API server, routing, middleware</td></tr>
+          <tr><td>Language</td><td>C#</td><td>13</td><td>All backend logic</td></tr>
+          <tr><td>DB Access</td><td>Dapper</td><td>2.1.72</td><td>Lightweight micro-ORM for SQL</td></tr>
+          <tr><td>DB Driver</td><td>Npgsql</td><td>10.0.2</td><td>PostgreSQL connection</td></tr>
+          <tr><td>Database</td><td>PostgreSQL (Neon Serverless)</td><td>—</td><td>Cloud-hosted DB with vector support</td></tr>
+          <tr><td>Vector Search</td><td>pgvector extension</td><td>—</td><td>Similarity search on embeddings</td></tr>
+          <tr><td>AI / Embeddings</td><td>OpenAI SDK</td><td>2.10.0</td><td><code>text-embedding-3-small</code> model</td></tr>
+          <tr><td>API Docs</td><td>Swashbuckle</td><td>10.1.7</td><td>Swagger UI at <code>/swagger</code></td></tr>
+          <tr><td>Frontend</td><td>React + Vite</td><td>18 / 6</td><td>User interface</td></tr>
+          <tr><td>Frontend Lang</td><td>JavaScript (JSX)</td><td>—</td><td>UI components and API calls</td></tr>
+          <tr><td>Version Control</td><td>Git + GitHub</td><td>—</td><td>Source control and hosting</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3. ARCHITECTURE -->
+  <section id="architecture">
+    <h2><span class="icon">🏗️</span> System Architecture</h2>
+    <div class="arch">
+      <div class="arch-grid">
+        <div class="arch-box">
+          <div class="title">⚛️ React App</div>
+          <div class="sub">localhost:5173</div>
+          <div class="tech">Vite · JSX · CSS</div>
+        </div>
+        <div class="arch-arrow">⇄<br/><span style="font-size:0.7rem;color:var(--muted)">CORS<br/>HTTP</span></div>
+        <div class="arch-box highlight">
+          <div class="title">⚙️ .NET 10 API</div>
+          <div class="sub">localhost:5142</div>
+          <div class="tech">MovieController<br/>POST /api/seed<br/>POST /api/recommend</div>
+        </div>
+        <div class="arch-arrow">⇄</div>
+        <div class="arch-box">
+          <div class="title">🗃️ Neon PostgreSQL</div>
+          <div class="sub">Cloud Serverless</div>
+          <div class="tech">movies table<br/>VECTOR(1536)<br/>pgvector</div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:24px; color:var(--muted); font-size:0.85rem;">
+        ↑ The API also calls <strong style="color:#b8b3ff;">OpenAI API</strong> for embedding generation (both on seed and recommend)
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. HOW IT WORKS -->
+  <section id="how-it-works">
+    <h2><span class="icon">⚙️</span> How It Works — Step by Step</h2>
+
+    <h3>Phase 1: Seeding the Database (<code>POST /api/seed</code>)</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Connect to PostgreSQL on Neon</h4>
+          <p>API reads the connection string from <code>appsettings.json</code> and opens a connection via Npgsql.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Enable pgvector &amp; Create Table</h4>
+          <p>Runs <code>CREATE EXTENSION IF NOT EXISTS vector</code> and creates the <code>movies</code> table with an <code>embedding VECTOR(1536)</code> column.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Generate Embeddings with OpenAI</h4>
+          <p>For each of the 5 movies, sends a combined text (<em>title + genre + description</em>) to OpenAI's <code>text-embedding-3-small</code> model. Receives a 1536-float vector back.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Insert into PostgreSQL</h4>
+          <p>Stores the title, genre, description, and the float vector in the database via Dapper's <code>ExecuteAsync</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:32px;">Phase 2: Recommending Movies (<code>POST /api/recommend</code>)</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>User types a query in React</h4>
+          <p>e.g. <em>"crime family drama"</em> — React sends <code>POST /api/recommend</code> with <code>{"query": "crime family drama"}</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Convert query to embedding vector</h4>
+          <p>The API sends the query text to the same OpenAI model. Gets back a 1536-dimensional float vector representing the meaning of the query.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>pgvector similarity search</h4>
+          <p>Runs SQL using <code>&lt;-&gt;</code> (L2 distance, for ordering) and <code>&lt;=&gt;</code> (cosine distance, for score). Returns the 3 closest movies.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Return results to React</h4>
+          <p>JSON array of 3 movies with <code>title</code>, <code>genre</code>, <code>description</code>, and <code>similarity</code> (0–1 score). React renders them as cards.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. BACKEND -->
+  <section id="backend">
+    <h2><span class="icon">⚙️</span> Backend — .NET 10 Web API</h2>
+
+    <h3>Program.cs — App Entry Point</h3>
+<pre><code><span class="kw">var</span> builder = WebApplication.<span class="fn">CreateBuilder</span>(args);
+
+builder.Services.<span class="fn">AddControllers</span>();           <span class="cm">// Enable controller routing</span>
+builder.Services.<span class="fn">AddEndpointsApiExplorer</span>();  <span class="cm">// Swagger endpoint discovery</span>
+builder.Services.<span class="fn">AddSwaggerGen</span>();            <span class="cm">// Swagger UI</span>
+
+<span class="cm">// CORS: allow the React frontend on port 5173</span>
+builder.Services.<span class="fn">AddCors</span>(options =>
+{
+    options.<span class="fn">AddPolicy</span>(<span class="str">"AllowReact"</span>, policy =>
+    {
+        policy.<span class="fn">WithOrigins</span>(<span class="str">"http://localhost:5173"</span>)
+              .<span class="fn">AllowAnyHeader</span>()
+              .<span class="fn">AllowAnyMethod</span>();
+    });
+});
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+
+<span class="kw">if</span> (app.Environment.IsDevelopment())
+{
+    app.<span class="fn">UseSwagger</span>();
+    app.<span class="fn">UseSwaggerUI</span>();   <span class="cm">// accessible at /swagger</span>
+}
+
+app.<span class="fn">UseCors</span>(<span class="str">"AllowReact"</span>);  <span class="cm">// must be BEFORE MapControllers</span>
+app.<span class="fn">MapControllers</span>();
+app.<span class="fn">Run</span>();
+</code></pre>
+
+    <h3>Controllers/MovieController.cs — Main Logic</h3>
+<pre><code>[<span class="ty">ApiController</span>]
+[<span class="ty">Route</span>(<span class="str">"api"</span>)]
+<span class="kw">public class</span> <span class="ty">MovieController</span> : <span class="ty">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="ty">IConfiguration</span> _config;
+
+    <span class="kw">public</span> <span class="fn">MovieController</span>(<span class="ty">IConfiguration</span> config)
+    {
+        _config = config;  <span class="cm">// Injected — no hardcoded secrets</span>
+    }
+
+    [<span class="ty">HttpPost</span>(<span class="str">"seed"</span>)]
+    <span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">IActionResult</span>&gt; <span class="fn">Seed</span>()
+    {
+        <span class="cm">// 5 movies defined inline</span>
+        <span class="cm">// Creates pgvector table, generates embeddings, inserts all movies</span>
+        <span class="kw">return</span> <span class="fn">Ok</span>(<span class="kw">new</span> { seededCount = movies.Length });
+    }
+
+    [<span class="ty">HttpPost</span>(<span class="str">"recommend"</span>)]
+    <span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">IActionResult</span>&gt; <span class="fn">Recommend</span>([<span class="ty">FromBody</span>] <span class="ty">RecommendRequest</span> request)
+    {
+        <span class="cm">// Convert query → embedding vector via OpenAI</span>
+        <span class="cm">// Run pgvector similarity SQL</span>
+        <span class="cm">// Return top 3 matches</span>
+        <span class="kw">return</span> <span class="fn">Ok</span>(movies);
+    }
+}
+
+<span class="kw">public record</span> <span class="ty">RecommendRequest</span>(<span class="kw">string</span> Query);
+</code></pre>
+
+    <h3>NuGet Packages</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Package</th><th>Version</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>Swashbuckle.AspNetCore</code></td><td>10.1.7</td><td>Swagger UI for interactive API docs</td></tr>
+          <tr><td><code>Npgsql</code></td><td>10.0.2</td><td>PostgreSQL ADO.NET driver</td></tr>
+          <tr><td><code>Dapper</code></td><td>2.1.72</td><td>Micro-ORM — maps SQL results to objects</td></tr>
+          <tr><td><code>OpenAI</code></td><td>2.10.0</td><td>OpenAI SDK v2.x for embedding generation</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6. DATABASE -->
+  <section id="database">
+    <h2><span class="icon">🗄️</span> Database — PostgreSQL + pgvector</h2>
+    <p><strong>Hosting:</strong> <a href="https://neon.tech" style="color:var(--brand)">Neon</a> — serverless PostgreSQL with connection pooling and SSL.</p>
+
+    <h3>Table Schema</h3>
+<pre><code><span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> vector;
+
+<span class="sql-kw">CREATE TABLE</span> movies (
+    id          <span class="ty">SERIAL PRIMARY KEY</span>,
+    title       <span class="ty">TEXT NOT NULL</span>,
+    genre       <span class="ty">TEXT NOT NULL</span>,
+    description <span class="ty">TEXT NOT NULL</span>,
+    embedding   <span class="ty">VECTOR(1536)</span>    <span class="cm">-- 1536 floats from OpenAI</span>
+);
+</code></pre>
+
+    <h3>The 5 Seeded Movies</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Genre</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Inception</td><td>Sci-Fi</td><td>A thief who steals corporate secrets through dream-sharing technology.</td></tr>
+          <tr><td>The Godfather</td><td>Crime</td><td>The aging patriarch of an organized crime dynasty transfers control to his son.</td></tr>
+          <tr><td>Interstellar</td><td>Sci-Fi</td><td>A team of explorers travel through a wormhole in space to save humanity.</td></tr>
+          <tr><td>The Dark Knight</td><td>Action</td><td>Batman faces the Joker, a criminal mastermind who wreaks havoc on Gotham.</td></tr>
+          <tr><td>Forrest Gump</td><td>Drama</td><td>The life journey of a man with a low IQ but pure heart across decades of American history.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The Similarity SQL Query</h3>
+<pre><code><span class="sql-kw">SELECT</span> title, genre, description,
+       <span class="num">1</span> - (embedding <span class="sql-kw">&lt;=&gt;</span> <span class="sql-fn">CAST</span>(<span class="sql-param">@Embedding</span> <span class="sql-kw">AS</span> vector)) <span class="sql-kw">AS</span> similarity
+<span class="sql-kw">FROM</span> movies
+<span class="sql-kw">ORDER BY</span> embedding <span class="sql-kw">&lt;-&gt;</span> <span class="sql-fn">CAST</span>(<span class="sql-param">@Embedding</span> <span class="sql-kw">AS</span> vector)
+<span class="sql-kw">LIMIT</span> <span class="num">3</span>
+</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operator</th><th>Meaning</th><th>Used For</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;-&gt;</code></td><td>L2 (Euclidean) distance</td><td><code>ORDER BY</code> — closest vectors first</td></tr>
+          <tr><td><code>&lt;=&gt;</code></td><td>Cosine distance</td><td>Calculating similarity % (0–1)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 7. AI -->
+  <section id="ai">
+    <h2><span class="icon">🧠</span> AI Layer — OpenAI Embeddings</h2>
+    <p>An <strong>embedding</strong> is a list of numbers (a vector) that encodes the <em>meaning</em> of text. Similar texts produce vectors that are mathematically close together.</p>
+
+    <h3>Similarity Visualization (example)</h3>
+    <div class="embed-viz">
+      <div style="color:var(--muted); margin-bottom:14px; font-size:0.8rem;">Cosine similarity to query: "mind-bending science fiction"</div>
+      <div class="embed-row">
+        <div class="embed-label">Inception (Sci-Fi)</div>
+        <div class="embed-bar-wrap"><div class="embed-bar" style="width:91%"></div></div>
+        <div class="embed-score">91% match</div>
+      </div>
+      <div class="embed-row">
+        <div class="embed-label">Interstellar (Sci-Fi)</div>
+        <div class="embed-bar-wrap"><div class="embed-bar" style="width:84%"></div></div>
+        <div class="embed-score">84% match</div>
+      </div>
+      <div class="embed-row">
+        <div class="embed-label">The Dark Knight (Action)</div>
+        <div class="embed-bar-wrap"><div class="embed-bar" style="width:58%"></div></div>
+        <div class="embed-score">58% match</div>
+      </div>
+      <div class="embed-row">
+        <div class="embed-label">The Godfather (Crime)</div>
+        <div class="embed-bar-wrap"><div class="embed-bar" style="width:41%"></div></div>
+        <div class="embed-score">41% match</div>
+      </div>
+      <div class="embed-row">
+        <div class="embed-label">Forrest Gump (Drama)</div>
+        <div class="embed-bar-wrap"><div class="embed-bar" style="width:29%"></div></div>
+        <div class="embed-score">29% match</div>
+      </div>
+    </div>
+
+    <h3>Model: text-embedding-3-small</h3>
+    <div class="card-grid">
+      <div class="card"><div class="card-icon">📐</div><h4>1536 Dimensions</h4><p>Every piece of text becomes an array of 1536 float numbers</p></div>
+      <div class="card"><div class="card-icon">🎯</div><h4>Semantic Understanding</h4><p>Understands meaning, context, synonyms — not just exact words</p></div>
+      <div class="card"><div class="card-icon">⚡</div><h4>Fast &amp; Cost-Efficient</h4><p>Optimised for production use — fast inference at low cost</p></div>
+    </div>
+
+    <h3>SDK Usage (OpenAI SDK v2.x)</h3>
+<pre><code><span class="kw">var</span> client = <span class="kw">new</span> <span class="ty">OpenAIClient</span>(apiKey);
+<span class="kw">var</span> embeddingClient = client.<span class="fn">GetEmbeddingClient</span>(<span class="str">"text-embedding-3-small"</span>);
+
+<span class="kw">var</span> embeddingResult = <span class="kw">await</span> embeddingClient.<span class="fn">GenerateEmbeddingAsync</span>(text);
+<span class="kw">var</span> vector = embeddingResult.Value.<span class="fn">ToFloats</span>().<span class="fn">ToArray</span>();  <span class="cm">// float[]</span>
+</code></pre>
+  </section>
+
+  <!-- 8. FRONTEND -->
+  <section id="frontend">
+    <h2><span class="icon">⚛️</span> Frontend — React App</h2>
+
+    <div class="card-grid">
+      <div class="card"><div class="card-icon">🔍</div><h4>Search Input</h4><p>Text field with Enter key support for fast querying</p></div>
+      <div class="card"><div class="card-icon">⏳</div><h4>Loading Spinner</h4><p>Shows while waiting for the API — button disabled during load</p></div>
+      <div class="card"><div class="card-icon">⚠️</div><h4>Error Handling</h4><p>Displays a clear error message if the fetch fails</p></div>
+      <div class="card"><div class="card-icon">🃏</div><h4>3 Movie Cards</h4><p>Genre badge · Match % · Title · Description</p></div>
+    </div>
+
+    <h3>App.jsx — Key Logic</h3>
+<pre><code><span class="kw">async function</span> <span class="fn">handleSearch</span>() {
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'http://localhost:5142/api/recommend'</span>, {
+    method: <span class="str">'POST'</span>,
+    headers: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+    body: <span class="ty">JSON</span>.<span class="fn">stringify</span>({ query }),
+  })
+  <span class="kw">const</span> data = <span class="kw">await</span> res.<span class="fn">json</span>()
+  <span class="fn">setMovies</span>(data)  <span class="cm">// array of 3 movies</span>
+}
+
+<span class="cm">// Rendering movie cards:</span>
+{movies.<span class="fn">map</span>((movie, i) => (
+  &lt;<span class="ty">div</span> className=<span class="str">"card"</span> key={i}&gt;
+    &lt;<span class="ty">div</span> className=<span class="str">"card-header"</span>&gt;
+      &lt;<span class="ty">span</span> className=<span class="str">"card-genre"</span>&gt;{movie.genre}&lt;/<span class="ty">span</span>&gt;
+      &lt;<span class="ty">span</span> className=<span class="str">"card-score"</span>&gt;
+        {(movie.similarity * <span class="num">100</span>).<span class="fn">toFixed</span>(<span class="num">0</span>)}% match
+      &lt;/<span class="ty">span</span>&gt;
+    &lt;/<span class="ty">div</span>&gt;
+    &lt;<span class="ty">h2</span>&gt;{movie.title}&lt;/<span class="ty">h2</span>&gt;
+    &lt;<span class="ty">p</span>&gt;{movie.description}&lt;/<span class="ty">p</span>&gt;
+  &lt;/<span class="ty">div</span>&gt;
+))}
+</code></pre>
+  </section>
+
+  <!-- 9. API REFERENCE -->
+  <section id="api">
+    <h2><span class="icon">📡</span> API Reference</h2>
+
+    <div class="api-block">
+      <div class="api-header">
+        <span class="method">POST</span>
+        <span class="endpoint">/api/seed</span>
+      </div>
+      <div class="api-body">
+        <p>Seeds the database with 5 movies and their OpenAI-generated embeddings. Run this once before using recommend.</p>
+        <p><strong style="color:var(--muted)">Request body:</strong> none</p>
+        <p><strong style="color:var(--muted)">Response:</strong></p>
+<pre><code>{ <span class="str">"seededCount"</span>: <span class="num">5</span> }
+</code></pre>
+      </div>
+    </div>
+
+    <div class="api-block">
+      <div class="api-header">
+        <span class="method">POST</span>
+        <span class="endpoint">/api/recommend</span>
+      </div>
+      <div class="api-body">
+        <p>Returns the top 3 most semantically similar movies for a natural language query.</p>
+        <p><strong style="color:var(--muted)">Request body:</strong></p>
+<pre><code>{ <span class="str">"query"</span>: <span class="str">"space adventure with wormholes"</span> }
+</code></pre>
+        <p><strong style="color:var(--muted)">Response:</strong></p>
+<pre><code>[
+  {
+    <span class="str">"title"</span>: <span class="str">"Interstellar"</span>,
+    <span class="str">"genre"</span>: <span class="str">"Sci-Fi"</span>,
+    <span class="str">"description"</span>: <span class="str">"A team of explorers travel through a wormhole..."</span>,
+    <span class="str">"similarity"</span>: <span class="num">0.9234</span>
+  },
+  { <span class="str">"title"</span>: <span class="str">"Inception"</span>, <span class="str">"similarity"</span>: <span class="num">0.7821</span>, ... },
+  { <span class="str">"title"</span>: <span class="str">"The Dark Knight"</span>, <span class="str">"similarity"</span>: <span class="num">0.6102</span>, ... }
+]
+</code></pre>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); font-size:0.88rem;">💡 Swagger UI is available at <code>http://localhost:5142/swagger</code> during development for interactive testing.</p>
+  </section>
+
+  <!-- 10. CHALLENGES -->
+  <section id="challenges">
+    <h2><span class="icon">🧩</span> Key Challenges Solved</h2>
+
+    <div class="challenge">
+      <h4>Challenge 1 — Swagger Not Working on .NET 10</h4>
+      <p class="prob"><span class="label">Problem</span>The default <code>Microsoft.AspNetCore.OpenApi</code> package from the template doesn't provide a Swagger UI browser.</p>
+      <p class="sol"><span class="label">Solution</span>Replaced with <code>Swashbuckle.AspNetCore</code> (<code>AddSwaggerGen()</code>, <code>UseSwagger()</code>, <code>UseSwaggerUI()</code>) which provides the full interactive UI.</p>
+    </div>
+
+    <div class="challenge">
+      <h4>Challenge 2 — OpenAI SDK Breaking Change (v1 → v2)</h4>
+      <p class="prob"><span class="label">Problem</span>Old code used <code>EmbeddingsEndpoint.CreateEmbeddingAsync()</code> — this API was removed in SDK v2.x.</p>
+      <p class="sol"><span class="label">Solution</span>Updated to <code>client.GetEmbeddingClient("model").GenerateEmbeddingAsync(text)</code> — the new v2.x pattern.</p>
+    </div>
+
+    <div class="challenge">
+      <h4>Challenge 3 — pgvector Type Casting with Dapper</h4>
+      <p class="prob"><span class="label">Problem</span>Dapper passes a <code>float[]</code> as a plain array — PostgreSQL couldn't automatically cast it to the <code>vector</code> type, throwing a type mismatch error.</p>
+      <p class="sol"><span class="label">Solution</span>Added explicit <code>CAST(@Embedding AS vector)</code> in the SQL, forcing the correct type conversion.</p>
+    </div>
+
+    <div class="challenge">
+      <h4>Challenge 4 — CORS Blocking the React Frontend</h4>
+      <p class="prob"><span class="label">Problem</span>Browser blocked API calls from <code>localhost:5173</code> to <code>localhost:5142</code> — different ports means CORS policy violation.</p>
+      <p class="sol"><span class="label">Solution</span>Added a named CORS policy <code>"AllowReact"</code> with <code>WithOrigins("http://localhost:5173")</code> and applied it before routing with <code>app.UseCors()</code>.</p>
+    </div>
+
+    <div class="challenge">
+      <h4>Challenge 5 — Secrets Committed to Git, GitHub Blocked Push</h4>
+      <p class="prob"><span class="label">Problem</span><code>bin/Debug/net10.0/appsettings.json</code> (containing the OpenAI API key) was committed before <code>.gitignore</code> was created. GitHub's secret scanning blocked every push attempt.</p>
+      <p class="sol"><span class="label">Solution</span>Created a fresh orphan branch with <code>git checkout --orphan</code> — a single clean commit with no history, then force-pushed to replace <code>main</code> on GitHub entirely.</p>
+    </div>
+
+    <div class="challenge">
+      <h4>Challenge 6 — Raw String Literal SQL Indentation Error</h4>
+      <p class="prob"><span class="label">Problem</span>C# raw string literals (<code>"""..."""</code>) require the closing <code>"""</code> to set the indentation baseline. Misaligned whitespace caused a compiler error.</p>
+      <p class="sol"><span class="label">Solution</span>Aligned all SQL lines to the same indentation level as the closing <code>"""</code> delimiter.</p>
+    </div>
+  </section>
+
+  <!-- 11. SECURITY -->
+  <section id="security">
+    <h2><span class="icon">🔒</span> Security Practices</h2>
+    <div class="security-grid">
+      <div class="sec-item">
+        <div class="check">✅</div>
+        <h4>Secrets Out of Source Control</h4>
+        <p><code>appsettings.json</code> added to <code>.gitignore</code> — credentials never pushed to GitHub</p>
+      </div>
+      <div class="sec-item">
+        <div class="check">✅</div>
+        <h4>No Hardcoded Credentials</h4>
+        <p>API key and DB password read via <code>IConfiguration</code> — injected by the framework</p>
+      </div>
+      <div class="sec-item">
+        <div class="check">✅</div>
+        <h4>CORS Restriction</h4>
+        <p>Only <code>localhost:5173</code> is allowed — not a wildcard <code>*</code></p>
+      </div>
+      <div class="sec-item">
+        <div class="check">✅</div>
+        <h4>SSL Database Connection</h4>
+        <p>Neon connection uses <code>SSL Mode=Require</code> — encrypted in transit</p>
+      </div>
+      <div class="sec-item">
+        <div class="check">✅</div>
+        <h4>Clean Git History</h4>
+        <p>Orphan branch used to remove accidentally committed secrets from all history</p>
+      </div>
+      <div class="sec-item">
+        <div class="check">✅</div>
+        <h4>Build Artifacts Excluded</h4>
+        <p><code>bin/</code> and <code>obj/</code> excluded via <code>.gitignore</code> — no compiled binaries in repo</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. SETUP -->
+  <section id="setup">
+    <h2><span class="icon">🚀</span> How to Run Locally</h2>
+
+    <h3>Prerequisites</h3>
+    <div class="card-grid">
+      <div class="card"><div class="card-icon">🔷</div><h4>.NET 10 SDK</h4><p>dotnet.microsoft.com/download</p></div>
+      <div class="card"><div class="card-icon">🟩</div><h4>Node.js 18+</h4><p>nodejs.org</p></div>
+      <div class="card"><div class="card-icon">🔑</div><h4>OpenAI API Key</h4><p>platform.openai.com/api-keys</p></div>
+      <div class="card"><div class="card-icon">🐘</div><h4>PostgreSQL (Neon)</h4><p>neon.tech — free tier works</p></div>
+    </div>
+
+    <h3 style="margin-top:28px;">Backend Setup</h3>
+    <div class="setup-step">
+      <div class="setup-num">1</div>
+      <div class="setup-content">
+        <h4>Clone the repository</h4>
+<pre><code>git clone https://github.com/Shaikomer0906/ai-movie-recommendation.git
+cd ai-movie-recommendation</code></pre>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">2</div>
+      <div class="setup-content">
+        <h4>Create appsettings.json (gitignored — you must create this manually)</h4>
+<pre><code>{
+  <span class="str">"ConnectionStrings"</span>: {
+    <span class="str">"Default"</span>: <span class="str">"Host=your-neon-host;Database=neondb;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true"</span>
+  },
+  <span class="str">"OpenAI"</span>: {
+    <span class="str">"ApiKey"</span>: <span class="str">"sk-your-openai-key-here"</span>
+  }
+}</code></pre>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">3</div>
+      <div class="setup-content">
+        <h4>Run the API</h4>
+<pre><code>dotnet run</code></pre>
+        <p style="color:var(--muted); font-size:0.85rem; margin-top:6px;">API: <code>http://localhost:5142</code> · Swagger: <code>http://localhost:5142/swagger</code></p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">4</div>
+      <div class="setup-content">
+        <h4>Seed the database (one time only)</h4>
+        <p style="color:var(--muted); font-size:0.85rem;">Use Swagger UI or any HTTP client: <code>POST http://localhost:5142/api/seed</code></p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:28px;">Frontend Setup</h3>
+    <div class="setup-step">
+      <div class="setup-num">5</div>
+      <div class="setup-content">
+        <h4>Install and run the React app</h4>
+<pre><code>cd movie-ui
+npm install
+npm run dev</code></pre>
+        <p style="color:var(--muted); font-size:0.85rem; margin-top:6px;">Open: <code>http://localhost:5173</code></p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Built by <strong>Shaik Omer</strong> · .NET 10 · React · OpenAI · PostgreSQL + pgvector · April 2026
+  <br/><br/>
+  <a href="https://github.com/Shaikomer0906/ai-movie-recommendation" style="color:var(--brand); text-decoration:none;">⭐ github.com/Shaikomer0906/ai-movie-recommendation</a>
+</footer>
+
+</body>
+</html>
